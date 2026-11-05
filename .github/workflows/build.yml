@@ -1,0 +1,33 @@
+name: Build APK from zip
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: unzip -q AICLUB-src.zip -d work
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+      - name: Build debug APK
+        working-directory: work/AICLUB
+        run: gradle assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AICLUB-debug-apk
+          path: work/AICLUB/app/build/outputs/apk/debug/*.apk
+      - name: Unit tests
+        working-directory: work/AICLUB
+        continue-on-error: true
+        run: gradle testDebugUnitTest --no-daemon
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-reports
+          path: work/AICLUB/app/build/reports/tests/
